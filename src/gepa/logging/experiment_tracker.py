@@ -158,7 +158,13 @@ class ExperimentTracker:
                 # is logged via log_table() instead to avoid noisy flat charts
                 numeric_metrics = {self._p(k): v for k, v in metrics.items() if isinstance(v, int | float)}
                 if numeric_metrics:
-                    wandb.log(numeric_metrics, step=step)
+                    # When attached to an existing run, don't pass step= to avoid
+                    # conflicting with the host's step counter (e.g. RL trainer).
+                    # The key_prefix already namespaces the metrics.
+                    if self.wandb_attach_existing:
+                        wandb.log(numeric_metrics, commit=False)
+                    else:
+                        wandb.log(numeric_metrics, step=step)
             except Exception as e:
                 print(f"Warning: Failed to log to wandb: {e}")
 
